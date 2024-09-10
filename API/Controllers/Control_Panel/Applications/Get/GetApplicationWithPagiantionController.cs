@@ -2,83 +2,68 @@
 using Microsoft.AspNetCore.Mvc;
 using Shared.Criteria.Application;
 using Shared.Domain.Control_Panel.Administration.App_Config;
-using Shared.DTO.Common;
-using Shared.Helper.Pagination;
-using Shared.View.Control_Panel.Applications;
+using Shared.Helper.Action_Result;
 using System.Linq.Expressions;
+
 
 namespace API.Controllers.Control_Panel.Applications.Get
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GetApplicationWithPagiantionController : ControllerBase
+    public class GetApplicationWithPaginationController : ControllerBase
     {
         private readonly GetApplicationWithPaginationService _getApplicationWithPaginationService;
-        public GetApplicationWithPagiantionController(
+
+        public GetApplicationWithPaginationController(
             GetApplicationWithPaginationService getApplicationWithPaginationService
-            )
+        )
         {
             _getApplicationWithPaginationService = getApplicationWithPaginationService;
         }
-
 
         // ..................................................................................................
         // ............................................................. Get All Applications With Pagination
         // .......................................... Starting
 
-
-
         [HttpGet("GetApplications")]
-        public async Task<ActionResult<PaginationResponse<PaginatedList<GetApplicationResultViewModel>>>> GetApplications(
+        public async Task<IActionResult> GetApplications(
             [FromQuery] int pageNumber,
             [FromQuery] int pageSize)
         {
             var response = await _getApplicationWithPaginationService.GetApplicationsWithPaginationAsync(pageNumber, pageSize);
 
-            return Ok(response);
+            return ActionResultHelper.HandlePaginationResponse(response);
         }
 
-
         [HttpGet("GetApplicationsWithCriteria")]
-        public async Task<ActionResult<PaginationResponse<PaginatedList<GetApplicationResultViewModel>>>> GetApplicationsWithCriteria(
+        public async Task<IActionResult> GetApplicationsWithCriteria(
             [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
-
         {
             Expression<Func<Application, bool>> predicate = app =>
-               (string.IsNullOrEmpty(criteria.ApplicationName) || app.ApplicationName.Contains(criteria.ApplicationName)) &&
-               (!criteria.IsActive || app.IsActive);
+                (string.IsNullOrEmpty(criteria.ApplicationName) || app.ApplicationName.Contains(criteria.ApplicationName)) &&
+                (!criteria.IsActive || app.IsActive);
 
             var response = await _getApplicationWithPaginationService.GetApplicationsWithPaginationAsync(predicate, criteria.PageNumber, criteria.PageSize);
 
-            return Ok(response);
+            return ActionResultHelper.HandlePaginationResponse(response);
         }
-
-
 
         [HttpGet("GetApplicationsWithPredicate")]
-        public async Task<ActionResult<PaginationResponse<PaginatedList<GetApplicationResultViewModel>>>> GetApplicationsWithPredicate(
-        [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
-
-        {
-            var response = await _getApplicationWithPaginationService.GetApplicationsWithPaginationAsync(criteria, criteria.PageNumber, criteria.PageSize);
-            if (response.Success)
-            {
-                return Ok(response);
-            }
-            return BadRequest(response.Message);
-        }
-
-
-
-        [HttpGet("GetApplicationsWithPredicateAndOrder")]
-        public async Task<ActionResult<PaginationResponse<PaginatedList<GetApplicationResultViewModel>>>> GetApplicationsWithPredicateAndOrder(
+        public async Task<IActionResult> GetApplicationsWithPredicate(
             [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
         {
-            if (criteria.PageNumber < 1)
-                criteria.PageNumber = 1;
+            var response = await _getApplicationWithPaginationService.GetApplicationsWithPaginationAsync(criteria, criteria.PageNumber, criteria.PageSize);
 
-            if (criteria.PageSize < 1)
-                criteria.PageNumber = 2;
+            return ActionResultHelper.HandlePaginationResponse(response);
+        }
+
+        [HttpGet("GetApplicationsWithPredicateAndOrder")]
+        public async Task<IActionResult> GetApplicationsWithPredicateAndOrder(
+            [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
+        {
+
+            if (criteria.PageNumber < 1) criteria.PageNumber = 1;
+            if (criteria.PageSize < 1) criteria.PageSize = 10; 
 
             try
             {
@@ -91,31 +76,21 @@ namespace API.Controllers.Control_Panel.Applications.Get
                     orderBy
                 );
 
-                if (response.Success)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response.Message);
+                return ActionResultHelper.HandlePaginationResponse(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
-
-
-
-
         [HttpGet("GetApplicationsWithCriteriaAndOrder")]
-        public async Task<ActionResult<PaginationResponse<PaginatedList<GetApplicationResultViewModel>>>> GetApplicationsWithCriteriaAndOrder(
-        [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
+        public async Task<IActionResult> GetApplicationsWithCriteriaAndOrder(
+            [FromQuery] ApplicationSearchCriteriaWithPagination criteria)
         {
-            if (criteria.PageNumber < 1)
-                criteria.PageNumber = 1;
 
-            if (criteria.PageSize < 1)
-                criteria.PageSize = 10; 
+            if (criteria.PageNumber < 1) criteria.PageNumber = 1;
+            if (criteria.PageSize < 1) criteria.PageSize = 10;
 
             try
             {
@@ -130,16 +105,11 @@ namespace API.Controllers.Control_Panel.Applications.Get
                     orderBy
                 );
 
-                if (response.Success)
-                {
-                    return Ok(response);
-                }
-
-                return BadRequest(response.Message);
+                return ActionResultHelper.HandlePaginationResponse(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Internal server error: " + ex.Message);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
@@ -150,18 +120,7 @@ namespace API.Controllers.Control_Panel.Applications.Get
                 (!criteria.IsActive || application.IsActive);
         }
 
-
         // .......................................... End
         // ............................................................. Get All Applications With Pagination
-
-
-
-
-
-
-
     }
 }
-
-
-

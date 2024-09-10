@@ -23,7 +23,7 @@ namespace API.Controllers.Control_Panel
 
 
         [HttpGet]
-        [Route("buttons/all")]
+        [Route("GetAllButtons")]
         public async Task<IActionResult> GetAllButtons()
         {
             var response = await _getButtonService.GetAllButtonsAsync();
@@ -81,7 +81,7 @@ namespace API.Controllers.Control_Panel
         }
 
 
-        [HttpGet("buttons/search-by-button-and-component-name")]
+        [HttpGet("GetButtonWithComponents")]
         public async Task<IActionResult> GetButtonWithComponents([FromQuery] ButtonSearchCriteria criteria)
         {
             // Construct predicate based on criteria

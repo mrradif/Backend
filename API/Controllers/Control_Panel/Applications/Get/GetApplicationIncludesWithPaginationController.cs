@@ -17,7 +17,7 @@ namespace API.Controllers.Control_Panel.Applications.Get
             _service = service;
         }
 
-        // 1. Get Applications with Pagination and Includes
+
         [HttpGet("GetApplicationsWithPaginationAndIncludes")]
         public async Task<IActionResult> GetApplicationsWithPaginationAndIncludes([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
@@ -32,7 +32,7 @@ namespace API.Controllers.Control_Panel.Applications.Get
             return Ok(response);
         }
 
-        // 2. Get Applications with Pagination, Includes, and Ordering
+
         [HttpGet("GetApplicationsWithPaginationAndIncludesWithOrderBy")]
         public async Task<IActionResult> GetApplicationsWithPaginationAndIncludesWithOrderBy([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
@@ -50,7 +50,6 @@ namespace API.Controllers.Control_Panel.Applications.Get
         }
 
 
-        // 3. Get Applications with Pagination, Includes, and Predicate
         [HttpPost("GetApplicationsWithPaginationAndIncludesWithPredicate")]
         public async Task<IActionResult> GetApplicationsWithPaginationAndIncludesWithPredicate([FromBody] ApplicationSearchCriteria applicationSearchCriteria, [FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
@@ -75,7 +74,7 @@ namespace API.Controllers.Control_Panel.Applications.Get
         }
 
 
-        // 4. Get Applications with Pagination, Includes, Predicate, and Ordering
+
         [HttpPost("GetApplicationsWithPaginationIncludesAndOrderBy")]
         public async Task<IActionResult> GetApplicationsWithPaginationIncludesAndOrderBy([FromBody] ApplicationSearchCriteria applicationSearchCriteria, [FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
@@ -96,5 +95,7 @@ namespace API.Controllers.Control_Panel.Applications.Get
 
             return Ok(response);
         }
+
+
     }
 }

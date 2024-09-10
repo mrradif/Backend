@@ -21,7 +21,7 @@ namespace Shared.Auto_Mapper.Control_Panel.Administration.Application_Map
             // ............................ Start
 
             // Get Application
-            CreateMap<Application, GetApplicationResultViewModel>();
+           CreateMap<Application, GetApplicationResultViewModel>();
 
 
             // Get Application With Module
@@ -64,10 +64,11 @@ namespace Shared.Auto_Mapper.Control_Panel.Administration.Application_Map
 
             // Create Application
             CreateMap<CreateApplicationRequestDto, Application>();
+            CreateMap<Application, CreateApplicationRequestDto>();
 
             // Create Application Result
-            CreateMap<Application, CreateApplicationResultViewModel>();
-
+            CreateMap<Application, CreateApplicationResultViewModel>().ReverseMap();
+   
 
             // ............................ End
             // .......................................Create

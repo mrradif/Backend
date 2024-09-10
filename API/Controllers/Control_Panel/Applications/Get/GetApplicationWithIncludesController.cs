@@ -16,8 +16,8 @@ namespace API.Controllers.Control_Panel.Applications.Get
             _getApplicationWithIncludesService = getApplicationWithIncludesService;
         }
 
-        // GET: api/GetApplicationWithIncludes/all
-        [HttpGet("all")]
+
+        [HttpGet("GetAllApplications")]
         public async Task<IActionResult> GetAllApplications()
         {
             var includes = new Expression<Func<Application, object>>[]
@@ -32,8 +32,8 @@ namespace API.Controllers.Control_Panel.Applications.Get
             return Ok(result);
         }
 
-        // GET: api/GetApplicationWithIncludes/predicate
-        [HttpGet("predicate")]
+
+        [HttpGet("GetApplicationsWithPredicate")]
         public async Task<IActionResult> GetApplicationsWithPredicate([FromQuery] ApplicationSearchCriteria criteria)
         {
             var predicate = (Expression<Func<Application, bool>>)(app => app.ApplicationName.StartsWith(criteria.ApplicationName));
@@ -50,8 +50,9 @@ namespace API.Controllers.Control_Panel.Applications.Get
             return Ok(result);
         }
 
-        // GET: api/GetApplicationWithIncludes/ordered
-        [HttpGet("ordered")]
+
+
+        [HttpGet("GetApplicationsOrdered")]
         public async Task<IActionResult> GetApplicationsOrdered()
         {
             var predicate = (Expression<Func<Application, bool>>)(app => app.IsActive);
@@ -69,8 +70,10 @@ namespace API.Controllers.Control_Panel.Applications.Get
             return Ok(result);
         }
 
-        // GET: api/GetApplicationWithIncludes/single
-        [HttpGet("single")]
+
+
+
+        [HttpGet("GetSingleApplication")]
         public async Task<IActionResult> GetSingleApplication([FromQuery] ApplicationSearchCriteria criteria)
         {
             var predicate = (Expression<Func<Application, bool>>)(app => app.ApplicationName == criteria.ApplicationName);

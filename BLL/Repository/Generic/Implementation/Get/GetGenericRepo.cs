@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
 using BLL.Repository.Generic.Interface.Get;
-using DAL.Context.Control_Panel;
-using DAL.Service.Logger;
 using Microsoft.EntityFrameworkCore;
 using Shared.DTO.Common;
-using System;
+using System.Data;
 using System.Linq.Expressions;
+using DAL.Service.Logger;
 
 
 namespace BLL.Repository.Generic.Implementation.Get
@@ -16,63 +15,73 @@ namespace BLL.Repository.Generic.Implementation.Get
     {
         private readonly TContext _context;
         private readonly IMapper _mapper;
+        private readonly ErrorLogger _errorLogger;
 
-        public GetGenericRepo(TContext context, IMapper mapper)
+        public GetGenericRepo(
+            TContext context, 
+            IMapper mapper,
+            ErrorLogger errorLogger)
         {
             _context = context;
             _mapper = mapper;
+            _errorLogger = errorLogger;
         }
+
+
+        #region GetAllAsync Methods
 
         public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync()
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 var entities = await _context.Set<T>().ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
-
 
         public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(Expression<Func<T, bool>> predicate)
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 var entities = await _context.Set<T>().Where(predicate).ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found matching the criteria."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities with filter: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
 
-
-        public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null)
+        public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(
+            Expression<Func<T, bool>> predicate,
+            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null)
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 IQueryable<T> query = _context.Set<T>().Where(predicate);
@@ -84,94 +93,88 @@ namespace BLL.Repository.Generic.Implementation.Get
 
                 var entities = await query.ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found matching the criteria."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
 
+        #endregion
 
 
 
 
 
-        // Get Single
-        // With Primary Key
+        #region GetSingleAsync Methods
+
         public async Task<Response<TDtoResult>> GetSingleAsync(TId id)
         {
-            var response = new Response<TDtoResult>();
-
             try
             {
-                var entities = await _context.Set<T>().FindAsync(id);
-                var dtos = _mapper.Map<TDtoResult>(entities);
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = "Entities retrieved successfully.";
+                var entity = await _context.Set<T>().FindAsync(id);
+                return new Response<TDtoResult>(
+                    success: entity != null,
+                    statusCode: entity != null ? 200 : 404,
+                    data: entity != null ? _mapper.Map<TDtoResult>(entity) : default,
+                    message: entity != null ? "Entity retrieved successfully." : "Entity not found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities with filter: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<TDtoResult>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entity: {ex.Message}"
+                );
             }
-
-            return response;
         }
-
-
 
         public async Task<Response<TDtoResult>> GetSingleAsync(Expression<Func<T, bool>> predicate)
         {
-            var response = new Response<TDtoResult>();
-
             try
             {
-                var entities = await _context.Set<T>().Where(predicate).FirstOrDefaultAsync();
-                var dtos = _mapper.Map<TDtoResult>(entities);
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = "Entities retrieved successfully.";
+                var entity = await _context.Set<T>().Where(predicate).FirstOrDefaultAsync();
+                return new Response<TDtoResult>(
+                    success: entity != null,
+                    statusCode: entity != null ? 200 : 404,
+                    data: entity != null ? _mapper.Map<TDtoResult>(entity) : default,
+                    message: entity != null ? "Entity retrieved successfully." : "Entity not found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities with filter: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<TDtoResult>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entity: {ex.Message}"
+                );
             }
-
-            return response;
         }
 
+        #endregion
 
 
 
 
 
+        #region GetAllAsync Methods With Includes
 
-
-
-
-
-
-
-
-        // With Includes
         public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(params Expression<Func<T, object>>[] includes)
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 IQueryable<T> query = _context.Set<T>();
@@ -183,28 +186,26 @@ namespace BLL.Repository.Generic.Implementation.Get
 
                 var entities = await query.ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
-
-
 
         public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 IQueryable<T> query = _context.Set<T>();
@@ -214,33 +215,30 @@ namespace BLL.Repository.Generic.Implementation.Get
                     query = query.Include(include);
                 }
 
-                if (predicate != null)
-                {
-                    query = query.Where(predicate);
-                }
+                query = predicate != null ? query.Where(predicate) : query;
 
                 var entities = await query.ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
 
         public async Task<Response<IEnumerable<TDtoResult>>> GetAllAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includes)
         {
-            var response = new Response<IEnumerable<TDtoResult>>();
-
             try
             {
                 IQueryable<T> query = _context.Set<T>();
@@ -250,10 +248,7 @@ namespace BLL.Repository.Generic.Implementation.Get
                     query = query.Include(include);
                 }
 
-                if (predicate != null)
-                {
-                    query = query.Where(predicate);
-                }
+                query = predicate != null ? query.Where(predicate) : query;
 
                 if (orderBy != null)
                 {
@@ -262,32 +257,36 @@ namespace BLL.Repository.Generic.Implementation.Get
 
                 var entities = await query.ToListAsync();
                 var dtos = entities.Select(entity => _mapper.Map<TDtoResult>(entity)).ToList();
-
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = $"{dtos.Count} entities retrieved successfully.";
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: dtos.Any(),
+                    statusCode: dtos.Any() ? 200 : 404,
+                    data: dtos.Any() ? dtos : new List<TDtoResult>(),
+                    message: dtos.Any() ? $"{dtos.Count} entities retrieved successfully." : "No entities found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
+                await _errorLogger.LogErrorAsync(ex);
+                return new Response<IEnumerable<TDtoResult>>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entities: {ex.Message}"
+                );
             }
-
-            return response;
         }
 
+        #endregion
 
 
 
 
+        #region GetSingleAsync With Include Methods
 
-
+        /// <summary>
+        /// Retrieves a single entity that matches the specified predicate, optionally including related data, and maps it to a DTO.
+        /// </summary>
         public async Task<Response<TDtoResult>> GetSingleAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
         {
-            var response = new Response<TDtoResult>();
-
             try
             {
                 IQueryable<T> query = _context.Set<T>();
@@ -297,28 +296,35 @@ namespace BLL.Repository.Generic.Implementation.Get
                     query = query.Include(include);
                 }
 
-                if (predicate != null)
-                {
-                    query = query.Where(predicate);
-                }
+                query = predicate != null ? query.Where(predicate) : query;
 
                 var entity = await query.FirstOrDefaultAsync();
-                var dtos = _mapper.Map<TDtoResult>(entity);
 
-
-                response.Success = true;
-                response.Data = dtos;
-                response.Message = "Entities retrieved successfully.";
+                // Use the constructor for success cases
+                return new Response<TDtoResult>(
+                    success: entity != null,
+                    statusCode: entity != null ? 200 : 404,
+                    data: entity != null ? _mapper.Map<TDtoResult>(entity) : default,
+                    message: entity != null ? "Entity retrieved successfully." : "Entity not found."
+                );
             }
             catch (Exception ex)
             {
-                //await ErrorLogger<ControlPanelDbContext>.LogErrorAsync(ex);
-                response.Success = false;
-                response.Message = $"Error retrieving entities: {ex.Message}";
-            }
+                await _errorLogger.LogErrorAsync(ex);
 
-            return response;
+                // Use the constructor for failure cases
+                return new Response<TDtoResult>(
+                    success: false,
+                    statusCode: ExceptionHelper.MapExceptionToStatusCode(ex),
+                    message: $"Error retrieving entity: {ex.Message}"
+                );
+            }
         }
+
+        #endregion
+
+
+
 
 
     }

@@ -26,7 +26,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\Others\" />
-    <Folder Include="wwwroot\" />
+    <Folder Include="wwwroot\Image\" />
   </ItemGroup>
 
 </Project>

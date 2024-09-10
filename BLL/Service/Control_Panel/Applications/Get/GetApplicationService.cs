@@ -189,6 +189,13 @@ namespace BLL.Service.Control_Panel.Applications.Get
             return await _getApplicationRepository.GetSingleAsync(applicationId);
         }
 
+
+        public async Task<Response<GetApplicationResultViewModel>> GetSingleApplicationById(Expression<Func<Application, bool>> predicate)
+        {
+            return await _getApplicationRepository.GetSingleAsync(predicate);
+        }
+
+
         public async Task<Response<GetApplicationResultViewModel>> GetSingleApplicationByCriteriaAsync(ApplicationSearchCriteria criteria)
         {
             Expression<Func<Application, bool>> predicate = app =>

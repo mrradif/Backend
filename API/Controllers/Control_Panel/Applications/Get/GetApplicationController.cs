@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Shared.Criteria.Application;
 using Shared.Domain.Control_Panel.Administration.App_Config;
+using Shared.Helper.Action_Result;
 using System.Linq.Expressions;
 
 namespace API.Controllers.Control_Panel.Applications.Get
@@ -26,7 +27,13 @@ namespace API.Controllers.Control_Panel.Applications.Get
         public async Task<IActionResult> GetAllApplications()
         {
             var response = await _getApplicationService.GetAllApplicationsAsync();
-            return Ok(response);
+
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+           
         }
 
 
@@ -218,11 +225,27 @@ namespace API.Controllers.Control_Panel.Applications.Get
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         // ................................................ Get Single Start
 
+
+
         [HttpGet("GetApplicationById")]
         public async Task<IActionResult> GetApplicationById([FromQuery] long applicationId)
         {
+            var response = await _getApplicationService.GetSingleApplicationById(
+                a => a.ApplicationId == applicationId
+            );
+
+            return ActionResultHelper.HandleResponse(response);
+        }
+
+
+        [HttpGet("GetApplicationById2")]
+        public async Task<IActionResult> GetApplicationById2([FromQuery] long applicationId)
+        {
+            // Call the service to get the application by its ID
             var response = await _getApplicationService.GetSingleApplicationById(applicationId);
-            return Ok(response);
+
+            // Use the helper method to handle the response and return the appropriate action result
+            return ActionResultHelper.HandleResponse(response);
         }
 
 

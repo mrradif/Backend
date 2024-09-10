@@ -4,6 +4,8 @@ using DAL.Context.Control_Panel;
 using DAL.Service.Logger;
 using Microsoft.EntityFrameworkCore;
 using Shared.DTO.Common;
+using Shared.DTO.Common.Access.Validation;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
 namespace BLL.Repository.Generic.Implementation.Post
@@ -25,13 +27,14 @@ namespace BLL.Repository.Generic.Implementation.Post
             _errorLogger = errorLogger;
         }
 
+
+
         public async Task<Response<TDtoResult>> AddAsync(TDto dto)
         {
             try
             {
                 var entity = _mapper.Map<T>(dto);
 
-                // Handle audit properties
                 AuditableEntityHandler.SetProperties(entity, "Add");
 
                 await _dbSet.AddAsync(entity);
@@ -44,6 +47,7 @@ namespace BLL.Repository.Generic.Implementation.Post
                     Data = result
                 };
             }
+
             catch (Exception ex)
             {
                 await _errorLogger.LogErrorAsync(ex);
@@ -55,6 +59,40 @@ namespace BLL.Repository.Generic.Implementation.Post
                 };
             }
         }
+
+
+
+
+        //public async Task<Response<TDtoResult>> AddAsync(TDto dto)
+        //{
+        //    try
+        //    {
+        //        var entity = _mapper.Map<T>(dto);
+
+        //        // Handle audit properties
+        //        AuditableEntityHandler.SetProperties(entity, "Add");
+
+        //        await _dbSet.AddAsync(entity);
+        //        await _context.SaveChangesAsync();
+        //        var result = _mapper.Map<TDtoResult>(entity);
+        //        return new Response<TDtoResult>
+        //        {
+        //            Success = true,
+        //            Message = "Insert successful",
+        //            Data = result
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _errorLogger.LogErrorAsync(ex);
+        //        return new Response<TDtoResult>
+        //        {
+        //            Success = false,
+        //            Message = $"Insert failed: {ex.Message}",
+        //            Data = default
+        //        };
+        //    }
+        //}
 
         public async Task<Response<TDtoResult>> AddAsync(TDto dto, Expression<Func<T, bool>> predicate)
         {
@@ -98,6 +136,8 @@ namespace BLL.Repository.Generic.Implementation.Post
                 };
             }
         }
+
+
 
         public async Task<Response<AddRangeResult<TDtoResult>>> AddRangeAsync(IEnumerable<TDto> dtos, IEnumerable<Expression<Func<T, bool>>> predicates)
         {
@@ -184,6 +224,9 @@ namespace BLL.Repository.Generic.Implementation.Post
                 };
             }
         }
+
+
+
 
         public async Task<Response<TDtoResult>> CheckExistsAsync(Expression<Func<T, bool>> predicate, TContext context)
         {
